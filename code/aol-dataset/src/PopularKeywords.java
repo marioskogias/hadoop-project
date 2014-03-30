@@ -1,4 +1,5 @@
 import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -41,7 +42,7 @@ public class PopularKeywords {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
-		Job job = new Job(conf, "popularKeys");
+		Job job = new Job(conf, "poplarKeywords");
 		job.setJarByClass(SearchCount.class);
 
 		job.setMapOutputKeyClass(Text.class);
@@ -60,6 +61,31 @@ public class PopularKeywords {
 		FileOutputFormat.setOutputPath(job, new Path("project_temp/popularSites"));
 
 		job.waitForCompletion(true);
+		
+		/*second m-r job*/
+		Configuration conf2 = new Configuration();
+
+		Job job2 = new Job(conf2, "totalOrder");
+		job2.setJarByClass(SearchCount.class);
+
+		job2.setMapOutputKeyClass(IntWritable.class);
+		job2.setMapOutputValueClass(Text.class);
+
+		job2.setOutputKeyClass(Text.class);
+		job2.setOutputValueClass(IntWritable.class);
+
+		job2.setMapperClass(PKTotalOrder.Map.class);
+		job2.setReducerClass(PKTotalOrder.Reduce.class);
+
+		job2.setInputFormatClass(TextInputFormat.class);
+		job2.setOutputFormatClass(TextOutputFormat.class);
+
+		job2.setSortComparatorClass(DecreasingIntComparator.DecreasingComparator.class);
+		
+		FileInputFormat.addInputPath(job2, new Path("project_temp/popularSites"));
+		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
+
+		job2.waitForCompletion(true);
 	}
 
 }
