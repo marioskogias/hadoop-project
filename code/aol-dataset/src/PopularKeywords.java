@@ -56,7 +56,9 @@ public class PopularKeywords {
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
-
+		
+		job.setNumReduceTasks(2);
+		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path("project_temp/popularSites"));
 
@@ -81,6 +83,9 @@ public class PopularKeywords {
 		job2.setOutputFormatClass(TextOutputFormat.class);
 
 		job2.setSortComparatorClass(DecreasingIntComparator.DecreasingComparator.class);
+		
+		job2.setPartitionerClass(IntTotalOrderPartitioner.class);
+		job2.setNumReduceTasks(2);
 		
 		FileInputFormat.addInputPath(job2, new Path("project_temp/popularSites"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));

@@ -1,23 +1,27 @@
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Partitioner;
 
- public class MyCustomDatePartitioner extends Partitioner<Text, IntWritable> {
+ public class IntTotalOrderPartitioner extends Partitioner<IntWritable, Writable> {
  
         @Override
-        public int getPartition(Text key, IntWritable value, int numReduceTasks) {
+        public int getPartition(IntWritable key, Writable value, int numReduceTasks) {
  
         	/*
         	 * we have at the most 2 reducers and the dates vary from March to May 2006
         	 */
-            String date = key.toString();
 
             //this is done to avoid performing mod with 0
             if(numReduceTasks == 0)
                 return 0;
             
-            if (date.compareTo("2006-04-15") == -1 )
+            /*
+             * http://www.philippeadjiman.com/blog/2009/12/20/hadoop-tutorial-series-issue-2-getting-started-with-customized-partitioning/
+             * check zipf's law
+             */
+            if (key.get() > 10) // this is a test
             	return 0;
             else
             	return 1;
         }
+
     }
