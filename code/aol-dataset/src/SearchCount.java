@@ -1,6 +1,7 @@
 import java.io.IOException;
 
         
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -50,7 +51,9 @@ public class SearchCount {
         
     job.setMapperClass(Map.class);
     job.setReducerClass(Reduce.class);
-        
+    
+    job.setPartitionerClass(MyCustomDatePartitioner.class);
+    
     job.setInputFormatClass(TextInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
         
