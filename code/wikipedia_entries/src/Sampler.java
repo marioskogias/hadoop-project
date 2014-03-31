@@ -21,11 +21,12 @@ public class Sampler {
 				if (count1 == step) {
 					map(context.getCurrentKey(), context.getCurrentValue(),
 							context);
-					step = -1;
+					count1 = -1;
 					count2++;
 					if (count2 == target)
 						break;
 				}
+				count1++;
 			}
 		}
 	}
