@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 
@@ -61,9 +62,9 @@ public class LexiSort {
 
 	public static void main(String[] args) throws Exception {
 		
+	/*	
+		Configuration conf = new Configuration();
 		
-	/*	Configuration conf = new Configuration();
-
 		Job job = new Job(conf, "sampling");
 		job.setJarByClass(LexiSort.class);
 
@@ -82,8 +83,10 @@ public class LexiSort {
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
-		*/
+		//FileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
+		
+		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
+	*/	
 		/* add destributed cache */
 	/*	DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
@@ -121,7 +124,7 @@ public class LexiSort {
 		
 		 
         Path inputDir = new Path("/user/root/project_wiki_partition");
-        Path partitionFile = new Path(inputDir, "my_part");
+        Path partitionFile = new Path(inputDir, "part-r-00000");
         TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
                 partitionFile);
         job2.setPartitionerClass(TotalOrderPartitioner.class);
