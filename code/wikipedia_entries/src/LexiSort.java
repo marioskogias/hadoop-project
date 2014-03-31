@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 
 
@@ -62,20 +61,19 @@ public class LexiSort {
 
 	public static void main(String[] args) throws Exception {
 		
-		int numReduceTasks = 28;
-		Configuration conf = new Configuration();
+		
+	/*	Configuration conf = new Configuration();
 
-		Job job = new Job(conf, "lexisort");
+		Job job = new Job(conf, "sampling");
 		job.setJarByClass(LexiSort.class);
 
-		//job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(NullWritable.class);
 
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(NullWritable.class);
 
-		job.setMapperClass(Map.class);
+		job.setMapperClass(Sampler.Map.class);
 		job.setReducerClass(Reduce.class);
 
 		job.setNumReduceTasks(1);
@@ -84,13 +82,51 @@ public class LexiSort {
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-		
+		FileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
+		*/
 		/* add destributed cache */
-		DistributedCache.addCacheFile(
+	/*	DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
 				job.getConfiguration());
 
-		job.waitForCompletion(true);
+		job.waitForCompletion(true); 
+	*/
+		int numReduceTasks = 28;
+		Configuration conf2 = new Configuration();
+
+		Job job2 = new Job(conf2, "lexisort");
+		job2.setJarByClass(LexiSort.class);
+
+		job2.setMapOutputKeyClass(Text.class);
+		job2.setMapOutputValueClass(NullWritable.class);
+
+		job2.setOutputKeyClass(Text.class);
+		job2.setOutputValueClass(NullWritable.class);
+
+		job2.setMapperClass(Map.class);
+		job2.setReducerClass(Reduce.class);
+
+		job2.setNumReduceTasks(numReduceTasks);
+
+		job2.setInputFormatClass(TextInputFormat.class);
+		job2.setOutputFormatClass(TextOutputFormat.class);
+
+		FileInputFormat.addInputPath(job2, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
+	
+		/* add destributed cache */
+		DistributedCache.addCacheFile(
+				new Path("/user/root/misc/english.stop").toUri(),
+				job2.getConfiguration());
+		
+		 
+        Path inputDir = new Path("/user/root/project_wiki_partition");
+        Path partitionFile = new Path(inputDir, "my_part");
+        TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
+                partitionFile);
+        job2.setPartitionerClass(TotalOrderPartitioner.class);
+        
+		job2.waitForCompletion(true); 
+	
 	}
 }
