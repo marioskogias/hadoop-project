@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.io.*;
@@ -14,6 +13,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
 
 public class Histogram {
 
@@ -41,10 +41,12 @@ public class Histogram {
 		
 		public int categorize(String s) {
 			int v = (int) Character.toLowerCase(s.toCharArray()[0]);
-			if ((v>122) || (v<97))
+			if ((v>47) && (v<58)) // digit
+				return 1;
+			else if ((v>122) || (v<97)) // symbol
 				return 0;
 			else
-				return (v%97)+1;
+				return (v%97)+2; // letter 
 		}
 		
 		public void map(LongWritable key, Text value, Context context)
@@ -56,16 +58,23 @@ public class Histogram {
 						context.write(new IntWritable(categorize(word)), one);
 		}
 	}
-
+	
+	/*consider one single reducer*/
 	public static class Reduce extends
-			Reducer<IntWritable, IntWritable, Text, Text> {
-
+			Reducer<IntWritable, IntWritable, Text, NullWritable> {
+		
+		Text t = new Text();
 		public void reduce(IntWritable key, Iterable<IntWritable> values,
 				Context context) throws IOException, InterruptedException {
+					int count = 0;
+					for (IntWritable v : values)
+						count++;
+					t.set(Integer.toString(key.get())+"_"+Integer.toString(count));
+					context.write(t, NullWritable.get());
 		}
 	}
 
-	/* we assume a single reducer */
+	
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
@@ -76,16 +85,18 @@ public class Histogram {
 		job.setMapOutputValueClass(IntWritable.class);
 
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(NullWritable.class);
 
 		job.setMapperClass(Map.class);
 		job.setReducerClass(Reduce.class);
-
+		
+		job.setNumReduceTasks(4);
+		
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+		FileOutputFormat.setOutputPath(job, new Path("project_wiki_temp"));
 
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
@@ -93,6 +104,30 @@ public class Histogram {
 				job.getConfiguration());
 
 		job.waitForCompletion(true);
+		
+		/* we assume a single reducer */
+		Configuration conf2 = new Configuration();
+
+		Job job2 = new Job(conf2, "histogramPercentage");
+		job2.setJarByClass(HistogramPercentage.class);
+
+		job2.setMapOutputKeyClass(IntWritable.class);
+		job2.setMapOutputValueClass(Text.class);
+
+		job2.setOutputKeyClass(Text.class);
+		job2.setOutputValueClass(Text.class);
+
+		job2.setMapperClass(HistogramPercentage.Map.class);
+		job2.setReducerClass(HistogramPercentage.Reduce.class);
+
+		job2.setInputFormatClass(TextInputFormat.class);
+		job2.setOutputFormatClass(TextOutputFormat.class);
+
+		FileInputFormat.addInputPath(job2, new Path("project_wiki_temp"));
+		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
+
+		
+		job2.waitForCompletion(true);
 	}
 
 }
