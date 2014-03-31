@@ -38,9 +38,22 @@ public class Histogram {
 			}
 
 		}
-
+		
+		public int categorize(String s) {
+			int v = (int) Character.toLowerCase(s.toCharArray()[0]);
+			if ((v>122) || (v<97))
+				return 0;
+			else
+				return (v%97)+1;
+		}
+		
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
+				String title = value.toString();
+				String[] words = title.split("_");
+				for (String word : words)
+					if (!stopWords.contains(word))
+						context.write(new IntWritable(categorize(word)), one);
 		}
 	}
 
