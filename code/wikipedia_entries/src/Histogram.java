@@ -14,7 +14,6 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
-
 public class Histogram {
 
 	public static class Map extends
@@ -22,6 +21,7 @@ public class Histogram {
 		private final static IntWritable one = new IntWritable(1);
 		FileInputStream fileStream;
 		HashSet<String> stopWords = new HashSet<String>();
+		int limit = 0;
 
 		public void setup(Context context) throws IOException,
 				InterruptedException {
@@ -38,43 +38,59 @@ public class Histogram {
 			}
 
 		}
-		
+
 		public int categorize(String s) {
 			int v = (int) Character.toLowerCase(s.toCharArray()[0]);
-			if ((v>47) && (v<58)) // digit
+			if ((v > 47) && (v < 58)) // digit
 				return 1;
-			else if ((v>122) || (v<97)) // symbol
+			else if ((v > 122) || (v < 97)) // symbol
 				return 0;
 			else
-				return (v%97)+2; // letter 
+				return (v % 97) + 2; // letter
 		}
-		
+
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
-				String title = value.toString();
-				String[] words = title.split("_");
-				for (String word : words)
-					if (!stopWords.contains(word))
-						context.write(new IntWritable(categorize(word)), one);
+			String title = value.toString();
+			String[] words = title.split("_");
+			for (String word : words)
+				if (!stopWords.contains(word))
+					context.write(new IntWritable(categorize(word)), one);
 		}
-	}
-	
-	/*consider one single reducer*/
-	public static class Reduce extends
-			Reducer<IntWritable, IntWritable, Text, NullWritable> {
+
+		@Override
+		public void run(Context context) throws IOException,
+				InterruptedException {
+			setup(context);
 		
-		Text t = new Text();
-		public void reduce(IntWritable key, Iterable<IntWritable> values,
-				Context context) throws IOException, InterruptedException {
-					int count = 0;
-					for (IntWritable v : values)
-						count++;
-					t.set(Integer.toString(key.get())+"_"+Integer.toString(count));
-					context.write(t, NullWritable.get());
+			/*
+			 * In order to produce less key-values use for loop 
+			 * otherwise for full output use while loop
+			 */
+			for (int i = 0;i<50;i++) {
+				context.nextKeyValue();
+			//while (context.nextKeyValue()) {
+				map(context.getCurrentKey(), context.getCurrentValue(), context);
+			}
 		}
 	}
 
-	
+	/* consider one single reducer */
+	public static class Reduce extends
+			Reducer<IntWritable, IntWritable, Text, NullWritable> {
+
+		Text t = new Text();
+
+		public void reduce(IntWritable key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			int count = 0;
+			for (IntWritable v : values)
+				count++;
+			t.set(Integer.toString(key.get()) + "_" + Integer.toString(count));
+			context.write(t, NullWritable.get());
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
@@ -89,9 +105,9 @@ public class Histogram {
 
 		job.setMapperClass(Map.class);
 		job.setReducerClass(Reduce.class);
-		
+
 		job.setNumReduceTasks(4);
-		
+
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
@@ -104,7 +120,7 @@ public class Histogram {
 				job.getConfiguration());
 
 		job.waitForCompletion(true);
-		
+
 		/* we assume a single reducer */
 		Configuration conf2 = new Configuration();
 
@@ -126,7 +142,6 @@ public class Histogram {
 		FileInputFormat.addInputPath(job2, new Path("project_wiki_temp"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
 
-		
 		job2.waitForCompletion(true);
 	}
 
