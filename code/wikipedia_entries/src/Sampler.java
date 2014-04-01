@@ -5,7 +5,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class Sampler {
-
+	static int SAMPLES_PER_MAPPER = 5000;
 	public static class Map extends LexiSort.Map {
 		@Override
 		public void run(Context context) throws IOException,
@@ -20,7 +20,7 @@ public class Sampler {
 			int step = 50;
 			int count1 = 0; // count1 step
 			int count2 = 0; // count2 target
-			int target = 50; // this is the amount we want
+			int target = SAMPLES_PER_MAPPER; // this is the amount we want
 			while (context.nextKeyValue() && (count2 < target))  {
 				if (count1 == step) {
 					map(context.getCurrentKey(), context.getCurrentValue(),
@@ -36,8 +36,7 @@ public class Sampler {
 	public static class Reduce extends
 			Reducer<Text, NullWritable, Text, NullWritable> {
 		
-		int MAPPERS_COUNT = 2; 			// use these if counters 
-		int SAMPLES_PER_MAPPER = 100;  	//are not updated yet
+		int MAPPERS_COUNT = 2; 			// use this with SAMPLES_PER_MAPPER if counters are not updated yet
 		
 		int reducersNo;
 		long samples;
