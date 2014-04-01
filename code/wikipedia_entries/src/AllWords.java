@@ -1,15 +1,15 @@
-package wikipedia_entries;
-
-import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Reducer.Context;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 public class AllWords {
 	public static class Map extends
@@ -42,10 +42,10 @@ public class AllWords {
 
 	public static class Reduce extends
 			Reducer<Text, IntWritable, IntWritable, NullWritable> {
-		
+
 		private IntWritable one = new IntWritable(1); // this is for exists
 		private IntWritable two = new IntWritable(2); // this is for not exists
-		
+
 		public void reduce(Text key, Iterable<IntWritable> values,
 				Context context) throws IOException, InterruptedException {
 			boolean foundOne = false;
@@ -53,7 +53,7 @@ public class AllWords {
 			for (IntWritable el : values) {
 				if (el.get() == 1)
 					foundOne = true;
-				else 
+				else
 					foundTwo = true;
 				if (foundOne && foundTwo)
 					break;
@@ -63,5 +63,27 @@ public class AllWords {
 			else
 				context.write(two, NullWritable.get());
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+
+		Job job = new Job(conf, "allwords");
+		job.setJarByClass(AllWords.class);
+
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(IntWritable.class);
+
+		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputValueClass(NullWritable.class);
+
+		job.setMapperClass(Map.class);
+		job.setReducerClass(Reduce.class);
+
+		job.setNumReduceTasks(10);
+
+		job.setInputFormatClass(TextInputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 	}
 }
