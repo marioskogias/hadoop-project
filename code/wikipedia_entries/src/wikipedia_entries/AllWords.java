@@ -8,6 +8,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 
 public class AllWords {
 	public static class Map extends
@@ -35,7 +37,31 @@ public class AllWords {
 					// "").toLowerCase()), one); // this removes all punctuation
 				}
 			}
+		}
+	}
 
+	public static class Reduce extends
+			Reducer<Text, IntWritable, IntWritable, NullWritable> {
+		
+		private IntWritable one = new IntWritable(1); // this is for exists
+		private IntWritable two = new IntWritable(2); // this is for not exists
+		
+		public void reduce(Text key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			boolean foundOne = false;
+			boolean foundTwo = false;
+			for (IntWritable el : values) {
+				if (el.get() == 1)
+					foundOne = true;
+				else 
+					foundTwo = true;
+				if (foundOne && foundTwo)
+					break;
+			}
+			if (foundOne && foundTwo)
+				context.write(one, NullWritable.get());
+			else
+				context.write(two, NullWritable.get());
 		}
 	}
 }
