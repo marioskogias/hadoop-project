@@ -1,6 +1,7 @@
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -8,8 +9,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class AllWords {
 	public static class Map extends
@@ -23,7 +28,7 @@ public class AllWords {
 
 			String title = value.toString();
 			String[] words = title.split("\t");
-			if (words.length == 0) {// this is a wiki file
+			if (words.length == 1) {// this is a wiki file
 				words = title.split("\t");
 				for (String word : words) {
 					context.write(new Text(word), two);
@@ -85,5 +90,32 @@ public class AllWords {
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		SequenceFileOutputFormat.setOutputPath(job, new Path("temp"));
+
+		job.waitForCompletion(true);
+
+		conf = new Configuration();
+		job = new Job(conf, "count");
+		job.setJarByClass(AllWords.class);
+
+		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputValueClass(NullWritable.class);
+
+		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		job.setReducerClass(CountQueries.Reduce.class);
+		job.setNumReduceTasks(2);
+
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		SequenceFileInputFormat.addInputPath(job, new Path("temp"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		job.waitForCompletion(true);
+
 	}
 }
