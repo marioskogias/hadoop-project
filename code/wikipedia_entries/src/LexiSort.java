@@ -61,6 +61,7 @@ public class LexiSort {
 
 	public static void main(String[] args) throws Exception {
 		
+		int numReduceTasks = 27;
 		
 		Configuration conf = new Configuration();
 		
@@ -74,16 +75,14 @@ public class LexiSort {
 		job.setOutputValueClass(NullWritable.class);
 
 		job.setMapperClass(Sampler.Map.class);
-		job.setReducerClass(Reduce.class);
+		job.setReducerClass(Sampler.Reduce.class);
 
 		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(TextInputFormat.class);
-		//job.setOutputFormatClass(TextOutputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		//FileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
 		
 		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
 		
@@ -91,10 +90,11 @@ public class LexiSort {
 		DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
 				job.getConfiguration());
-
+		job.getConfiguration().set("REDUCERS_NO", Integer.toString(numReduceTasks));
 		job.waitForCompletion(true); 
-	
-		int numReduceTasks = 28;
+		
+		/*second hadoop jop after sampling*/
+		
 		Configuration conf2 = new Configuration();
 
 		Job job2 = new Job(conf2, "lexisort");
@@ -128,7 +128,7 @@ public class LexiSort {
         TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
                 partitionFile);
         job2.setPartitionerClass(TotalOrderPartitioner.class);
-        
+       
 		job2.waitForCompletion(true); 
 	
 	}
