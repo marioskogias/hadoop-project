@@ -23,7 +23,6 @@ public class LexiSort {
 			Mapper<LongWritable, Text, Text, NullWritable> {
 		FileInputStream fileStream;
 		HashSet<String> stopWords = new HashSet<String>();
-		int limit = 0;
 
 		public void setup(Context context) throws IOException,
 				InterruptedException {
@@ -51,7 +50,7 @@ public class LexiSort {
 	}
 
 	public static class Reduce extends
-			Reducer<IntWritable, IntWritable, Text, NullWritable> {
+			Reducer<Text, NullWritable, Text, NullWritable> {
 
 
 		public void reduce(Text key, Iterable<NullWritable> values,
@@ -62,7 +61,7 @@ public class LexiSort {
 
 	public static void main(String[] args) throws Exception {
 		
-	/*	
+		
 		Configuration conf = new Configuration();
 		
 		Job job = new Job(conf, "sampling");
@@ -80,20 +79,21 @@ public class LexiSort {
 		job.setNumReduceTasks(1);
 
 		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
-
+		//job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		//FileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
 		
 		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
-	*/	
+		
 		/* add destributed cache */
-	/*	DistributedCache.addCacheFile(
+		DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
 				job.getConfiguration());
 
 		job.waitForCompletion(true); 
-	*/
+	
 		int numReduceTasks = 28;
 		Configuration conf2 = new Configuration();
 
