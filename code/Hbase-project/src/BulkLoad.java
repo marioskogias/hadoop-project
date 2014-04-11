@@ -1,3 +1,7 @@
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -12,16 +16,52 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class BulkLoad {
 
+	static String family = "wikipedia";
+	static String qualifier = "titles";
+
 	public static class Map extends
 			Mapper<LongWritable, Text, ImmutableBytesWritable, KeyValue> {
 
+		ImmutableBytesWritable hKey = new ImmutableBytesWritable();
+		KeyValue kv;
+
+		protected void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+
+			// create key as md5 of the value
+			String original = value.toString();
+			String md5Text = "";
+			MessageDigest md;
+			try {
+				md = MessageDigest.getInstance("MD5");
+				md.update(original.getBytes());
+				byte[] digest = md.digest();
+				StringBuffer sb = new StringBuffer();
+				for (byte b : digest) {
+					sb.append(String.format("%02x", b & 0xff));
+				}
+				md5Text = sb.toString();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			hKey.set(md5Text.getBytes());
+
+			// create the column value
+			kv = new KeyValue(hKey.get(), family.getBytes(),
+					qualifier.getBytes(), value.toString().getBytes());
+
+			context.write(hKey, kv);
+
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
 		HBaseConfiguration.addHbaseResources(conf);
-		
+
 		Job job = new Job(conf, "bulkload");
 		job.setJarByClass(BulkLoad.class);
 
