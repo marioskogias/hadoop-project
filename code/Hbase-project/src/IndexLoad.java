@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -10,22 +12,43 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
 
 public class IndexLoad {
 
 	static String family = "articles";
 
-	public static class Map extends
-			TableMapper<ImmutableBytesWritable, KeyValue> {
-
-		ImmutableBytesWritable hKey = new ImmutableBytesWritable();
-		KeyValue kv;
+	public static class Map extends TableMapper<Text, Text> {
 
 		protected void map(ImmutableBytesWritable key, Result value,
 				Context context) throws IOException, InterruptedException {
-			// process the table entries
+
+			// create value first
+			String original = key.toString();
+			String md5Text = "";
+			MessageDigest md;
+			try {
+				md = MessageDigest.getInstance("MD5");
+				md.update(original.getBytes());
+				byte[] digest = md.digest();
+				StringBuffer sb = new StringBuffer();
+				for (byte b : digest) {
+					sb.append(String.format("%02x", b & 0xff));
+				}
+				md5Text = sb.toString();
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+
+			Text article = new Text(md5Text);
+
+			String s = value.toString();
+			String[] words = s.split("_");
+
+			for (String word : words) {
+				context.write(new Text(word), article);
+			}
 
 		}
 	}
