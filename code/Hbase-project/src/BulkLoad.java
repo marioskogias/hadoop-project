@@ -87,7 +87,7 @@ public class BulkLoad {
 		
 		/*
 		 * After that just run 
-		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/hbase context
+		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/hbase content
 		 * to add the new rows to the table
 		 */
 
