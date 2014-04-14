@@ -3,6 +3,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
@@ -12,10 +13,9 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
-import org.apache.hadoop.mapreduce.Reducer.Context;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class IndexLoad {
 
@@ -82,16 +82,11 @@ public class IndexLoad {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
-		HBaseConfiguration.addHbaseResources(conf);
-
 		Job job = new Job(conf, "indexload");
 		job.setJarByClass(IndexLoad.class);
 
 		job.setNumReduceTasks(2);
-
-		job.setMapOutputKeyClass(ImmutableBytesWritable.class);
-		job.setMapOutputValueClass(KeyValue.class);
-
+		job.setReducerClass(Reduce.class);
 		job.setOutputFormatClass(HFileOutputFormat.class);
 
 		/*
@@ -110,16 +105,14 @@ public class IndexLoad {
 				Text.class, // mapper output value
 				job);
 
-		HTable hTable = new HTable(job.getConfiguration(), "content");
-
-		// Auto configure partitioner and reducer
-		HFileOutputFormat.configureIncrementalLoad(job, hTable);
-
+		FileOutputFormat.setOutputPath(job, new Path("hbase_index"));
+		
 		job.waitForCompletion(true);
 
 		/*
-		 * After that just run bin/hadoop jar lib/hbase-0.94.17.jar
-		 * completebulkload /user/root/hbase context to add the new rows to the
+		 * After that just run 
+		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/hbase index
+		 * to add the new rows to the
 		 * table
 		 */
 
