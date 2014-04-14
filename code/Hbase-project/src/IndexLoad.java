@@ -12,8 +12,10 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 
 public class IndexLoad {
 
@@ -53,6 +55,30 @@ public class IndexLoad {
 		}
 	}
 
+	public static class Reduce extends
+			Reducer<Text, Text, ImmutableBytesWritable, KeyValue> {
+
+		ImmutableBytesWritable hKey = new ImmutableBytesWritable();
+		KeyValue kv;
+		
+		public void reduce(Text key, Iterable<Text> values,
+				Context context) throws IOException, InterruptedException {
+			
+			//set the key
+			hKey.set(key.getBytes());
+			int i=0;
+			for (Text val : values) {
+				// create the column value
+				String qualifier = Integer.toString(i);
+				kv = new KeyValue(hKey.get(), family.getBytes(),
+						qualifier.getBytes(), val.getBytes());
+				context.write(hKey, kv);
+				i++;
+			}
+			
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
@@ -80,8 +106,8 @@ public class IndexLoad {
 															// name
 				scan, // Scan instance to control CF and attribute selection
 				Map.class, // mapper
-				ImmutableBytesWritable.class, // mapper output key
-				KeyValue.class, // mapper output value
+				Text.class, // mapper output key
+				Text.class, // mapper output value
 				job);
 
 		HTable hTable = new HTable(job.getConfiguration(), "content");
