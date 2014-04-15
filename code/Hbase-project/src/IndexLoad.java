@@ -32,7 +32,7 @@ public class IndexLoad {
 				Context context) throws IOException, InterruptedException {
 
 			// create value first
-			String article = key.toString();
+			String article =Bytes.toString(key.get());
 
 			byte[] val = value.getValue(Bytes.toBytes("wikipedia"),
 					Bytes.toBytes("titles"));
@@ -55,7 +55,6 @@ public class IndexLoad {
 		}
 	}
 
-	
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 
@@ -81,7 +80,7 @@ public class IndexLoad {
 				job);
 
 		FileOutputFormat.setOutputPath(job, new Path("hbase_index"));
-		
+
 		HTable hTable = new HTable(job.getConfiguration(), "index");
 
 		// Auto configure partitioner and reducer
@@ -89,8 +88,9 @@ public class IndexLoad {
 		job.waitForCompletion(true);
 
 		/*
-		 * After that just run bin/hadoop jar lib/hbase-0.94.17.jar
-		 * completebulkload /user/root/hbase index to add the new rows to the
+		 * After that just run 
+		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/hbase_index index 
+		 * to add the new rows to the
 		 * table
 		 */
 
