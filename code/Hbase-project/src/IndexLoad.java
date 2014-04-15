@@ -22,13 +22,17 @@ public class IndexLoad {
 
 	static String family = "articles";
 
-	public static class Map extends TableMapper<ImmutableBytesWritable, Text> {
+	public static class Map extends
+			TableMapper<ImmutableBytesWritable, KeyValue> {
+
+		ImmutableBytesWritable hKey = new ImmutableBytesWritable();
+		KeyValue kv;
 
 		protected void map(ImmutableBytesWritable key, Result value,
 				Context context) throws IOException, InterruptedException {
 
 			// create value first
-			Text article = new Text(key.toString());
+			String article = key.toString();
 
 			byte[] val = value.getValue(Bytes.toBytes("wikipedia"),
 					Bytes.toBytes("titles"));
@@ -36,46 +40,28 @@ public class IndexLoad {
 			// the
 			// value we inserted at this location.
 			String valueStr = Bytes.toString(val);
-
 			String[] words = valueStr.split("_");
 
+			// qualifier will be the last 8 chars of the article md5
+			String qualifier = article.substring(24);
+
 			for (String word : words) {
-				context.write(new ImmutableBytesWritable(word.getBytes()), article);
+				hKey.set(word.getBytes());
+				kv = new KeyValue(hKey.get(), family.getBytes(),
+						qualifier.getBytes(), article.getBytes());
+				context.write(hKey, kv);
 			}
 
 		}
 	}
 
-	public static class Reduce extends
-			Reducer<ImmutableBytesWritable, Text, ImmutableBytesWritable, KeyValue> {
-
-		KeyValue kv;
-
-		public void reduce(ImmutableBytesWritable key, Iterable<Text> values, Context context)
-				throws IOException, InterruptedException {
-
-			int i = 0;
-			for (Text val : values) {
-				// create the column value
-				String qualifier = Integer.toString(i);
-				kv = new KeyValue(key.get(), family.getBytes(),
-						qualifier.getBytes(), val.toString().getBytes());
-				context.write(key, kv);
-				i++;
-			}
-
-		}
-	}
-
+	
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
-		
-		
+
 		Job job = new Job(conf, "indexload");
 		job.setJarByClass(IndexLoad.class);
-		
-		job.setNumReduceTasks(1);
-		job.setReducerClass(Reduce.class);
+
 		job.setOutputFormatClass(HFileOutputFormat.class);
 
 		/*
@@ -91,10 +77,15 @@ public class IndexLoad {
 				scan, // Scan instance to control CF and attribute selection
 				Map.class, // mapper
 				ImmutableBytesWritable.class, // mapper output key
-				Text.class, // mapper output value
+				KeyValue.class, // mapper output value
 				job);
 
 		FileOutputFormat.setOutputPath(job, new Path("hbase_index"));
+		
+		HTable hTable = new HTable(job.getConfiguration(), "index");
+
+		// Auto configure partitioner and reducer
+		HFileOutputFormat.configureIncrementalLoad(job, hTable);
 		job.waitForCompletion(true);
 
 		/*
