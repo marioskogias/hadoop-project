@@ -58,9 +58,9 @@ public class HistogramPercentage {
 		case 25:
 			return "X*";
 		case 26:
-			return "Y";
+			return "Y*";
 		case 27:
-			return "Z";
+			return "Z*";
 		default:
 			return "~!@#$%^&*()_+{}|:\"<>?[];',./";
 		}
@@ -80,13 +80,13 @@ public class HistogramPercentage {
 
 	/* consider one single reducer */
 	public static class Reduce extends
-			Reducer<IntWritable, Text, Text, Text> {
+			Reducer<NullWritable, Text, Text, Text> {
 
 		Text k = new Text();
 		Text val = new Text();
 		int[] arr = new int[28];
 		
-		public void reduce(IntWritable key, Iterable<Text> values,
+		public void reduce(NullWritable key, Iterable<Text> values,
 				Context context) throws IOException, InterruptedException {
 			int count = 0;
 			for (Text v : values) {

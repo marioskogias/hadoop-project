@@ -10,8 +10,10 @@ import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class Histogram {
@@ -67,9 +69,9 @@ public class Histogram {
 			 * In order to produce less key-values use for loop 
 			 * otherwise for full output use while loop
 			 */
-			for (int i = 0;i<50;i++) {
-				context.nextKeyValue();
-			//while (context.nextKeyValue()) {
+			//for (int i = 0;i<50;i++) {
+			//	context.nextKeyValue();
+			while (context.nextKeyValue()) {
 				map(context.getCurrentKey(), context.getCurrentValue(), context);
 			}
 		}
@@ -77,7 +79,7 @@ public class Histogram {
 
 	/* consider one single reducer */
 	public static class Reduce extends
-			Reducer<IntWritable, IntWritable, Text, NullWritable> {
+			Reducer<IntWritable, IntWritable, NullWritable, Text> {
 
 		Text t = new Text();
 
@@ -87,7 +89,7 @@ public class Histogram {
 			for (IntWritable v : values)
 				count++;
 			t.set(Integer.toString(key.get()) + "_" + Integer.toString(count));
-			context.write(t, NullWritable.get());
+			context.write(NullWritable.get(), t);
 		}
 	}
 
@@ -100,19 +102,19 @@ public class Histogram {
 		job.setMapOutputKeyClass(IntWritable.class);
 		job.setMapOutputValueClass(IntWritable.class);
 
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(NullWritable.class);
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Text.class);
 
 		job.setMapperClass(Map.class);
 		job.setReducerClass(Reduce.class);
 
-		job.setNumReduceTasks(4);
+		job.setNumReduceTasks(28);
 
 		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path("project_wiki_temp"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path("2_5_1_temp_results"));
 
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
@@ -127,19 +129,19 @@ public class Histogram {
 		Job job2 = new Job(conf2, "histogramPercentage");
 		job2.setJarByClass(HistogramPercentage.class);
 
-		job2.setMapOutputKeyClass(IntWritable.class);
+		job2.setMapOutputKeyClass(NullWritable.class);
 		job2.setMapOutputValueClass(Text.class);
 
 		job2.setOutputKeyClass(Text.class);
 		job2.setOutputValueClass(Text.class);
 
-		job2.setMapperClass(HistogramPercentage.Map.class);
+		//job2.setMapperClass(HistogramPercentage.Map.class);
 		job2.setReducerClass(HistogramPercentage.Reduce.class);
 
-		job2.setInputFormatClass(TextInputFormat.class);
+		job2.setInputFormatClass(SequenceFileInputFormat.class);
 		job2.setOutputFormatClass(TextOutputFormat.class);
 
-		FileInputFormat.addInputPath(job2, new Path("project_wiki_temp"));
+		SequenceFileInputFormat.addInputPath(job2, new Path("2_5_1_temp_results"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
 
 		job2.waitForCompletion(true);
