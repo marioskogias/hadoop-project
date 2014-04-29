@@ -1,3 +1,8 @@
+/**
+ * 2.2 success-failure rate
+ * Calculate successful vs failed queries rate
+ */
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 

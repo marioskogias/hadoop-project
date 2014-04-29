@@ -1,3 +1,6 @@
+/**
+ * 2.1 searches per day
+ */
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
