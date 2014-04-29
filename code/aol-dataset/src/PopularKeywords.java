@@ -5,8 +5,10 @@ import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class PopularKeywords {
@@ -55,12 +57,12 @@ public class PopularKeywords {
 		job.setReducerClass(Reduce.class);
 
 		job.setInputFormatClass(TextInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		
 		job.setNumReduceTasks(2);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path("project_temp/popularSites"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path("2_4_temp_results"));
 
 		job.waitForCompletion(true);
 		
@@ -76,10 +78,9 @@ public class PopularKeywords {
 		job2.setOutputKeyClass(Text.class);
 		job2.setOutputValueClass(IntWritable.class);
 
-		job2.setMapperClass(PKTotalOrder.Map.class);
 		job2.setReducerClass(PKTotalOrder.Reduce.class);
 
-		job2.setInputFormatClass(TextInputFormat.class);
+		job2.setInputFormatClass(SequenceFileInputFormat.class);
 		job2.setOutputFormatClass(TextOutputFormat.class);
 
 		job2.setSortComparatorClass(DecreasingIntComparator.DecreasingComparator.class);
@@ -87,7 +88,7 @@ public class PopularKeywords {
 		job2.setPartitionerClass(IntTotalOrderPartitioner.class);
 		job2.setNumReduceTasks(2);
 		
-		FileInputFormat.addInputPath(job2, new Path("project_temp/popularSites"));
+		SequenceFileInputFormat.addInputPath(job2, new Path("2_4_temp_results"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
 
 		job2.waitForCompletion(true);
