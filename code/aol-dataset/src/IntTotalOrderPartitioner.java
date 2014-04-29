@@ -18,7 +18,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
              * http://www.philippeadjiman.com/blog/2009/12/20/hadoop-tutorial-series-issue-2-getting-started-with-customized-partitioning/
              * check zipf's law
              */
-            if (key.get() > 10) // this is a test
+            if (key.get() > 3) // this is a test
             	return 0;
             else
             	return 1;

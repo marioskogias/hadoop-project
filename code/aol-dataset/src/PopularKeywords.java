@@ -1,5 +1,10 @@
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashSet;
 
+import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.io.*;
@@ -16,6 +21,27 @@ public class PopularKeywords {
 	public static class Map extends
 			Mapper<LongWritable, Text, Text, IntWritable> {
 		private final static IntWritable one = new IntWritable(1);
+		FileInputStream fileStream;
+		HashSet<String> stopWords = new HashSet<String>();
+		
+		/**
+		 * add all the stop words in a HashSet for ease of use
+		 */
+		public void setup(Context context) throws IOException,
+				InterruptedException {
+
+			Configuration conf = context.getConfiguration();
+			Path[] localFiles = DistributedCache.getLocalCacheFiles(conf);
+			fileStream = new FileInputStream(localFiles[0].toString());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					fileStream));
+			String line = reader.readLine();
+			while (line != null) {
+				stopWords.add(line);
+				line = reader.readLine();
+			}
+
+		}
 
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -23,7 +49,8 @@ public class PopularKeywords {
 			String words[] = line.split("\t");
 			String keywords[] = words[1].split(" ");
 			for (String word : keywords) {
-				context.write(new Text(word), one);
+				if (!stopWords.contains(word))
+					context.write(new Text(word), one);
 			}
 		}
 	}
@@ -49,7 +76,7 @@ public class PopularKeywords {
 
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
-		
+
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(Text.class);
 
@@ -58,15 +85,21 @@ public class PopularKeywords {
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		
+
 		job.setNumReduceTasks(2);
-		
+
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		SequenceFileOutputFormat.setOutputPath(job, new Path("2_4_temp_results"));
+		SequenceFileOutputFormat.setOutputPath(job,
+				new Path("2_4_temp_results"));
+
+		/* add destributed cache */
+		DistributedCache.addCacheFile(
+				new Path("/user/root/misc/english.stop").toUri(),
+				job.getConfiguration());
 
 		job.waitForCompletion(true);
-		
-		/*second m-r job*/
+
+		/* second m-r job */
 		Configuration conf2 = new Configuration();
 
 		Job job2 = new Job(conf2, "totalOrder");
@@ -84,11 +117,12 @@ public class PopularKeywords {
 		job2.setOutputFormatClass(TextOutputFormat.class);
 
 		job2.setSortComparatorClass(DecreasingIntComparator.DecreasingComparator.class);
-		
+
 		job2.setPartitionerClass(IntTotalOrderPartitioner.class);
 		job2.setNumReduceTasks(2);
-		
-		SequenceFileInputFormat.addInputPath(job2, new Path("2_4_temp_results"));
+
+		SequenceFileInputFormat
+				.addInputPath(job2, new Path("2_4_temp_results"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
 
 		job2.waitForCompletion(true);
