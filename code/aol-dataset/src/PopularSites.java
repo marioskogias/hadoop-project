@@ -1,3 +1,7 @@
+/**
+ * 2.3 Popular Websites
+ * Find sites with more than 10 unique visits
+ */
 import java.io.IOException;
 import java.util.HashSet;
 
@@ -12,6 +16,9 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class PopularSites {
 
+	/*
+	 * <web_site, username>
+	 */
 	public static class Map extends
 			Mapper<LongWritable, Text, Text, IntWritable> {
 		
@@ -21,7 +28,8 @@ public class PopularSites {
 			String words[] = line.split("\t");
 			try{
 				context.write(new Text(words[4]), new IntWritable(Integer.parseInt(words[0])));
-			} catch (IndexOutOfBoundsException e) {};
+			} catch (IndexOutOfBoundsException e) {}
+			catch (NumberFormatException e) {};
 		}
 	}
 
@@ -33,9 +41,10 @@ public class PopularSites {
 			HashSet<Integer> users = new HashSet<Integer>();
 			for (IntWritable val : values) {
 				users.add(val.get());
+				}
+				if (users.size() > 10) {
+					context.write(key, new IntWritable(users.size()));
 			}
-			if (users.size() >= 10)
-				context.write(key, new IntWritable(users.size()));
 		}
 	}
 
