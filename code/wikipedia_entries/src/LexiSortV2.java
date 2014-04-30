@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 
-public class LexiSort {
+public class LexiSortV2 {
 
 	public static class Map extends
 			Mapper<LongWritable, Text, Text, NullWritable> {
@@ -67,13 +67,13 @@ public class LexiSort {
 		job.setJarByClass(LexiSort.class);
 
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputValueClass(NullWritable.class);
 
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(NullWritable.class);
 
-		job.setMapperClass(MySampler.Map.class);
-		job.setReducerClass(MySampler.Reduce.class);
+		job.setMapperClass(SamplerV2.Map.class);
+		job.setReducerClass(SamplerV2.Reduce.class);
 
 		job.setNumReduceTasks(1);
 
