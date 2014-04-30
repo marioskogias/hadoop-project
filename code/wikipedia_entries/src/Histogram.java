@@ -18,6 +18,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class Histogram {
 
+	static int SAMPLES_PER_MAPPER = 50;
 	public static class Map extends
 			Mapper<LongWritable, Text, IntWritable, IntWritable> {
 		private final static IntWritable one = new IntWritable(1);
@@ -64,16 +65,27 @@ public class Histogram {
 		public void run(Context context) throws IOException,
 				InterruptedException {
 			setup(context);
-		
+
 			/*
-			 * In order to produce less key-values use for loop 
-			 * otherwise for full output use while loop
+			 * In order to produce less key-values use the following
 			 */
-			//for (int i = 0;i<50;i++) {
-			//	context.nextKeyValue();
-			while (context.nextKeyValue()) {
-				map(context.getCurrentKey(), context.getCurrentValue(), context);
+			float step = (float) 1.0 / SAMPLES_PER_MAPPER;
+			float counter = 0;
+			while (context.nextKeyValue() && (counter < 1)) {
+				if (context.getProgress() > counter) {
+					map(context.getCurrentKey(), context.getCurrentValue(),
+							context);
+					counter += step;
+				}
 			}
+			
+			/*
+			 * Else comment out the previous and use the following
+			 * for full output 
+			 */
+			/*while (context.nextKeyValue()) {
+				map(context.getCurrentKey(), context.getCurrentValue(), context);
+			}*/
 		}
 	}
 
@@ -114,7 +126,8 @@ public class Histogram {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		SequenceFileOutputFormat.setOutputPath(job, new Path("2_5_1_temp_results"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path(
+				"2_5_1_temp_results"));
 
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
@@ -135,13 +148,14 @@ public class Histogram {
 		job2.setOutputKeyClass(Text.class);
 		job2.setOutputValueClass(Text.class);
 
-		//job2.setMapperClass(HistogramPercentage.Map.class);
+		// job2.setMapperClass(HistogramPercentage.Map.class);
 		job2.setReducerClass(HistogramPercentage.Reduce.class);
 
 		job2.setInputFormatClass(SequenceFileInputFormat.class);
 		job2.setOutputFormatClass(TextOutputFormat.class);
 
-		SequenceFileInputFormat.addInputPath(job2, new Path("2_5_1_temp_results"));
+		SequenceFileInputFormat.addInputPath(job2, new Path(
+				"2_5_1_temp_results"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
 
 		job2.waitForCompletion(true);
