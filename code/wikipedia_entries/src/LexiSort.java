@@ -16,7 +16,6 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 
-
 public class LexiSort {
 
 	public static class Map extends
@@ -52,24 +51,23 @@ public class LexiSort {
 	public static class Reduce extends
 			Reducer<Text, NullWritable, Text, NullWritable> {
 
-
 		public void reduce(Text key, Iterable<NullWritable> values,
 				Context context) throws IOException, InterruptedException {
-					context.write(key, NullWritable.get());
+			context.write(key, NullWritable.get());
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-		
+
 		int numReduceTasks = 10;
-		
+
 		Configuration conf = new Configuration();
-		
+
 		Job job = new Job(conf, "sampling");
 		job.setJarByClass(LexiSort.class);
 
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(NullWritable.class);
+		job.setMapOutputValueClass(IntWritable.class);
 
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(NullWritable.class);
@@ -81,20 +79,22 @@ public class LexiSort {
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		
+
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		
-		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/2_5_2_partition"));
-		
+
+		SequenceFileOutputFormat.setOutputPath(job, new Path(
+				"/user/root/2_5_2_partition"));
+
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
 				job.getConfiguration());
-		job.getConfiguration().set("REDUCERS_NO", Integer.toString(numReduceTasks));
-		job.waitForCompletion(true); 
-		
-		/*second hadoop jop after sampling*/
-		
+		job.getConfiguration().set("REDUCERS_NO",
+				Integer.toString(numReduceTasks));
+		job.waitForCompletion(true);
+
+		/* second hadoop jop after sampling */
+
 		Configuration conf2 = new Configuration();
 
 		Job job2 = new Job(conf2, "lexisort");
@@ -116,20 +116,19 @@ public class LexiSort {
 
 		FileInputFormat.addInputPath(job2, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job2, new Path(args[1]));
-	
+
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
 				new Path("/user/root/misc/english.stop").toUri(),
 				job2.getConfiguration());
-		
-		 
-        Path inputDir = new Path("/user/root/2_5_2_partition");
-        Path partitionFile = new Path(inputDir, "part-r-00000");
-        TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
-                partitionFile);
-        job2.setPartitionerClass(TotalOrderPartitioner.class);
-       
-		job2.waitForCompletion(true); 
-	
+
+		Path inputDir = new Path("/user/root/2_5_2_partition");
+		Path partitionFile = new Path(inputDir, "part-r-00000");
+		TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
+				partitionFile);
+		job2.setPartitionerClass(TotalOrderPartitioner.class);
+
+		job2.waitForCompletion(true);
+
 	}
 }
