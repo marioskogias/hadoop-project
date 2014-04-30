@@ -61,7 +61,7 @@ public class LexiSort {
 
 	public static void main(String[] args) throws Exception {
 		
-		int numReduceTasks = 27;
+		int numReduceTasks = 10;
 		
 		Configuration conf = new Configuration();
 		
@@ -84,7 +84,7 @@ public class LexiSort {
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		
-		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/project_wiki_partition"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path("/user/root/2_5_2_partition"));
 		
 		/* add destributed cache */
 		DistributedCache.addCacheFile(
@@ -123,7 +123,7 @@ public class LexiSort {
 				job2.getConfiguration());
 		
 		 
-        Path inputDir = new Path("/user/root/project_wiki_partition");
+        Path inputDir = new Path("/user/root/2_5_2_partition");
         Path partitionFile = new Path(inputDir, "part-r-00000");
         TotalOrderPartitioner.setPartitionFile(job2.getConfiguration(),
                 partitionFile);
