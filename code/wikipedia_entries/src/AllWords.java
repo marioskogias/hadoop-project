@@ -48,28 +48,25 @@ public class AllWords {
 	}
 
 	public static class Reduce extends
-			Reducer<Text, IntWritable, IntWritable, NullWritable> {
+			Reducer<Text, IntWritable, IntWritable, IntWritable> {
 
 		private IntWritable one = new IntWritable(1); // this is for exists
 		private IntWritable two = new IntWritable(2); // this is for not exists
 
 		public void reduce(Text key, Iterable<IntWritable> values,
 				Context context) throws IOException, InterruptedException {
-			boolean foundOne = false;
-			boolean foundTwo = false;
+			int ones = 0;
+			int twos = 0;
 			for (IntWritable el : values) {
 				if (el.get() == 1)
-					foundOne = true;
+					ones++;
 				else
-					foundTwo = true;
-				if (foundOne && foundTwo)
-					break;
+					twos++;
 			}
-			if (foundOne && foundTwo)
-				context.write(one, NullWritable.get());
+			if (twos > 0)
+				context.write(one, new IntWritable(ones));
 			else
-				if (foundOne) // emit not found only for AOL keywords
-					context.write(two, NullWritable.get());
+				context.write(two, new IntWritable(ones));
 		}
 	}
 
@@ -85,7 +82,7 @@ public class AllWords {
 		job.setMapOutputValueClass(IntWritable.class);
 
 		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(NullWritable.class);
+		job.setOutputValueClass(IntWritable.class);
 
 		job.setMapperClass(Map.class);
 		job.setReducerClass(Reduce.class);
@@ -110,7 +107,7 @@ public class AllWords {
 		job.setJarByClass(AllWords.class);
 
 		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(NullWritable.class);
+		job.setMapOutputValueClass(IntWritable.class);
 
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(IntWritable.class);
@@ -127,6 +124,7 @@ public class AllWords {
 		job.waitForCompletion(true);
 		
 		// process the files for the final results
+		
 
 	}
 }
