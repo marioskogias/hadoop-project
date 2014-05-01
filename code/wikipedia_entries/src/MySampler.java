@@ -89,7 +89,7 @@ public class MySampler {
 
 		public void run(Context context) throws IOException,
 				InterruptedException {
-			// setup(context);
+			
 			int samples = 0;
 			context.nextKey();
 			if (context.getCurrentKey().toString().equals("")) {

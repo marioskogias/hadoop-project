@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 public class SamplerV2 {
 
-	static int SAMPLES_PER_MAPPER = 1000;
+	static int SAMPLES_PER_MAPPER = 50;
 
 	/**
 	 * 
