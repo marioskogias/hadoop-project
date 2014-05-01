@@ -29,14 +29,16 @@ public class AllWords {
 			String title = value.toString();
 			String[] words = title.split("\t");
 			if (words.length == 1) {// this is a wiki file
-				words = title.split("\t");
+				words = title.split("_");
 				for (String word : words) {
 					context.write(new Text(word), two);
 					// context.write(new Text(word.replaceAll("[^a-zA-Z ]",
 					// "").toLowerCase()), two); // this removes all punctuation
 				}
 			} else { // this is an aol file
-				for (String word : words) {
+				String search = words[1];
+				String[] searchWords = search.split(" ");
+				for (String word : searchWords) {
 					context.write(new Text(word), one);
 					// context.write(new Text(word.replaceAll("[^a-zA-Z ]",
 					// "").toLowerCase()), one); // this removes all punctuation
@@ -66,12 +68,14 @@ public class AllWords {
 			if (foundOne && foundTwo)
 				context.write(one, NullWritable.get());
 			else
-				context.write(two, NullWritable.get());
+				if (foundOne) // emit not found only for AOL keywords
+					context.write(two, NullWritable.get());
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
 
+		//first job 
 		Configuration conf = new Configuration();
 
 		Job job = new Job(conf, "allwords");
@@ -90,12 +94,17 @@ public class AllWords {
 
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-
+		
+		//aol dataset dir
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		SequenceFileOutputFormat.setOutputPath(job, new Path("temp"));
+		//wikipedia dataset dir
+		FileInputFormat.addInputPath(job, new Path(args[1]));
+		
+		SequenceFileOutputFormat.setOutputPath(job, new Path("2_6_temp_results"));
 
 		job.waitForCompletion(true);
 
+		//second job
 		conf = new Configuration();
 		job = new Job(conf, "count");
 		job.setJarByClass(AllWords.class);
@@ -112,10 +121,12 @@ public class AllWords {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
-		SequenceFileInputFormat.addInputPath(job, new Path("temp"));
-		SequenceFileOutputFormat.setOutputPath(job, new Path(args[1]));
+		SequenceFileInputFormat.addInputPath(job, new Path("2_6_temp_results"));
+		SequenceFileOutputFormat.setOutputPath(job, new Path(args[2]));
 
 		job.waitForCompletion(true);
+		
+		// process the files for the final results
 
 	}
 }
