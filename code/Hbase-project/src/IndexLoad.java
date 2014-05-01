@@ -44,11 +44,11 @@ public class IndexLoad {
 
 			// qualifier will be the last 8 chars of the article md5
 			String qualifier = article.substring(24);
-
+			
 			for (String word : words) {
 				hKey.set(word.getBytes());
 				kv = new KeyValue(hKey.get(), family.getBytes(),
-						qualifier.getBytes(), article.getBytes());
+						qualifier.getBytes(), valueStr.getBytes());
 				context.write(hKey, kv);
 			}
 
@@ -79,7 +79,7 @@ public class IndexLoad {
 				KeyValue.class, // mapper output value
 				job);
 
-		FileOutputFormat.setOutputPath(job, new Path("hbase_index"));
+		FileOutputFormat.setOutputPath(job, new Path("3_2_results"));
 
 		HTable hTable = new HTable(job.getConfiguration(), "index");
 
@@ -89,7 +89,7 @@ public class IndexLoad {
 
 		/*
 		 * After that just run 
-		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/hbase_index index 
+		 * bin/hadoop jar lib/hbase-0.94.17.jar completebulkload /user/root/3_2_results index 
 		 * to add the new rows to the
 		 * table
 		 */
