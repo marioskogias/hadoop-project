@@ -124,6 +124,7 @@ public class AllWords {
 		job.waitForCompletion(true);
 		
 		// process the files for the final results
+		(new ProcessResults(args[2])).printResults();
 		
 
 	}
