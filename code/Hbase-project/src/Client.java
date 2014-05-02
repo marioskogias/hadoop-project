@@ -15,14 +15,13 @@ public class Client {
 
 	String FAMILY = "articles";
 	String PATH = "/user/root/misc/1000_popular_keywords";
-
+	int RANDOM_AMOUNT = 1000;
+	
 	private HTable table;
 	private Path pt;
 	private FileSystem fs;
 	private BufferedReader br;
 
-	// String line;
-	// line = br.readLine();
 	public Client(String tableName) {
 
 		Configuration config = HBaseConfiguration.create();
@@ -49,33 +48,29 @@ public class Client {
 	}
 
 	private String getRandomLine() {
-		int lineNo = (int) (Math.random() * 1000);
+		int lineNo = (int) (Math.random() * 999);
 		String result = null;
-		for (int i = 0; i < lineNo; i++)
-			try {
-				result = this.br.readLine();
-			} catch (IOException e) {
+		try {
+			result = this.br.readLine();
+			for (int i = 0; i < lineNo; i++)
+					result = this.br.readLine();
+			br = new BufferedReader(new InputStreamReader(fs.open(pt)));
+		}
+		catch (IOException e) {
 				e.printStackTrace();
 			}
 
-		// reset reader
-		try {
-			br = new BufferedReader(new InputStreamReader(fs.open(pt)));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		return result;
 	}
 
 	private String getKey(String line) {
-		System.out.println(line);
 		return line.split("\t")[0];
 	}
 
 	public int thousandRandom() {
 		int count = 0;
 		Result r;
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < RANDOM_AMOUNT; i++) {
 			r = getResults(getKey(getRandomLine()));
 			if (!r.isEmpty())
 				count++;
@@ -83,8 +78,29 @@ public class Client {
 		return count;
 	}
 
+	public int readAll() {
+		String line;
+		int count = 0;
+		Result r;
+		try {
+			while ((line = this.br.readLine()) != null) {
+				r = getResults(getKey(line));
+				if (!r.isEmpty())
+					count++;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return count;
+	}
+
 	public static void main(String[] args) {
 		Client c = new Client("index");
-		System.out.format("%d / 1000 returned\n", c.thousandRandom());
+		/*
+		 * For thousandRandom access print thousandRandmo
+		 * For full 1000_popular_words iterator prin readAll
+		 */
+		//System.out.format("%d / 1000 returned\n", c.thousandRandom());
+		System.out.format("%d / 1000 returned\n", c.readAll());
 	}
 }
