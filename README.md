@@ -8,18 +8,18 @@ Index
 ------
 
 2.1.
-*code/aol-dataset/src/SearchCount.java
+..*code/aol-dataset/src/SearchCount.java
 
 2.2.
-*code/aol-dataset/src/Rates.java
+..*code/aol-dataset/src/Rates.java
 
 2.3.
-*code/aol-dataset/src/PopularSites.java
+..*code/aol-dataset/src/PopularSites.java
 
 2.4.
-*code/aol-dataset/src/PopularKeywords.java (main)
-*code/aol-dataset/src/DecreasingIntComparator.java (comparator)
-*code/aol-dataset/src/IntTotalOrderPartitioner.java (partitioner)
-*code/aol-dataset/src/PKTotalOrder.java (second reducer)
+..*code/aol-dataset/src/PopularKeywords.java (main)
+..*code/aol-dataset/src/DecreasingIntComparator.java (comparator)
+..*code/aol-dataset/src/IntTotalOrderPartitioner.java (partitioner)
+..*code/aol-dataset/src/PKTotalOrder.java (second reducer)
 
 
